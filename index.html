@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Compras</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Lista de Compras</h1>
+    <select id="filter">
+        <option value="all">Todos</option>
+        <option value="to-buy">Para comprar</option>
+        <option value="unpurchased">Não selecionados</option>
+    </select>
+    <input type="text" id="newItem" placeholder="Adicionar item">
+    <button onclick="addItem()">Adicionar</button>
+    <ul id="shoppingList"></ul>
+    <button onclick="backupList()">Backup Lista</button>
+    <button onclick="recoverBackup()">Recuperar Backup</button>
+    <script src="script.js"></script>
+</body>
+</html>
