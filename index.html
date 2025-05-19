@@ -1,20 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Minha Lista de Compras</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    </head>
 <body>
-    <h1>Lista de Compras</h1>
-    
-    <select id="filter">
-        <option value="all">Todos</option>
-        <option value="to-buy">Para comprar</option>
-        <option value="unpurchased">Não selecionados</option>
-    </select>
+    <header>
+        <h1>Minha Lista de Mercado</h1>
+    </header>
 
-    <div id="controls">
-        <input type="text" id="newItem" placeholder="Adicionar item">
-        <button onclick="addItem()">Adicionar</button>
-        <button onclick="backupList()">Backup Lista</button>
-        <button onclick="recoverBackup()">Recuperar Backup</button>
-    </div>
+    <main>
+        <section class="input-area">
+            <input type="text" id="novo-item-input" placeholder="Adicionar item à lista base...">
+            <button id="adicionar-item-btn">Adicionar</button>
+        </section>
 
-    <ul id="shoppingList"></ul>
+        <section class="filtros-area">
+            <button id="mostrar-todos-btn" class="filtro-btn filtro-ativo" data-filtro="todos">Todos</button>
+            <button id="mostrar-pendentes-btn" class="filtro-btn" data-filtro="pendentes">Pendentes</button>
+            <button id="mostrar-comprados-btn" class="filtro-btn" data-filtro="comprados">Comprados</button>
+        </section>
+
+        <ul id="lista-de-compras">
+            </ul>
+
+        <section class="acoes-lista-area">
+            <button id="limpar-marcados-btn">Desmarcar Comprados (Nova Compra)</button>
+            <button id="remover-comprados-btn">Remover Marcados da Lista Base</button>
+        </section>
+    </main>
+
+    <footer>
+        <p>Lista de Mercado Simples - <span id="ano-atual"></span></p>
+    </footer>
 
     <script src="script.js"></script>
 </body>
+</html>
