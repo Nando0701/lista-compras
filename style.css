@@ -4,6 +4,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding-top: 50px; /* Ajuste para evitar sobreposição do filtro */
 }
 
 #filter {
@@ -14,12 +15,13 @@ body {
     background: white;
     padding: 5px;
     border: 1px solid #ccc;
+    z-index: 1000;
 }
 
-#newItem {
-    width: 80%;
-    padding: 10px;
-    font-size: 16px;
+#shoppingList {
+    margin-top: 60px; /* Espaço para o filtro */
+    width: 90%;
+    max-width: 400px;
 }
 
 #controls {
@@ -30,10 +32,20 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 90%;
+    max-width: 400px;
+}
+
+#newItem {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    outline: none; /* Remove zoom */
 }
 
 button {
-    margin: 5px;
+    width: 100%;
     padding: 10px;
     font-size: 16px;
+    margin-top: 5px;
 }
