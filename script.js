@@ -1,3 +1,4 @@
+```javascript
 document.addEventListener('DOMContentLoaded', () => {
     const filtroSelect = document.getElementById('filtro-itens');
     const listaDeComprasUl = document.getElementById('lista-de-compras');
@@ -67,12 +68,19 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderizarLista() {
         listaDeComprasUl.innerHTML = '';
 
-        let itemsParaRenderizar = items;
+        let itemsParaRenderizar = [...items]; // Cria uma cópia para não modificar o array original 'items' diretamente com o sort
+
+        // Aplica o filtro selecionado
         if (filtroAtual === 'a-comprar') {
-            itemsParaRenderizar = items.filter(item => !item.marcado);
+            itemsParaRenderizar = itemsParaRenderizar.filter(item => !item.marcado);
         } else if (filtroAtual === 'nao-selecionados') {
-            itemsParaRenderizar = items.filter(item => !item.marcado);
+            itemsParaRenderizar = itemsParaRenderizar.filter(item => !item.marcado); 
         }
+        
+        // Ordena os itens alfabeticamente pelo nome (case-insensitive)
+        itemsParaRenderizar.sort((a, b) => 
+            a.nome.localeCompare(b.nome, undefined, { sensitivity: 'base' })
+        );
 
         if (itemsParaRenderizar.length === 0) {
             const liVazia = document.createElement('li');
@@ -126,10 +134,10 @@ document.addEventListener('DOMContentLoaded', () => {
             nome: nomeDoItem,
             marcado: false
         };
-        items.unshift(novoItem);
+        items.unshift(novoItem); // Adiciona no início para feedback imediato, a ordenação cuidará da posição final
         novoItemInput.value = '';
         salvarItemsNoLocalStorage();
-        renderizarLista();
+        renderizarLista(); // A renderização agora inclui a ordenação
     }
 
     function toggleMarcarItem(idDoItem) {
@@ -179,8 +187,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (Array.isArray(itemsImportados) && itemsImportados.every(item => item.id && item.nome !== undefined && typeof item.marcado === 'boolean')) {
                             if (confirm("Isso substituirá sua lista atual. Deseja continuar?")) {
                                 items = itemsImportados;
-                                salvarItemsNoLocalStorage();
-                                renderizarLista();
+                                // Após carregar o backup, é bom re-renderizar para aplicar a ordenação
+                                salvarItemsNoLocalStorage(); 
+                                renderizarLista(); 
                                 alert("Backup restaurado com sucesso!");
                             }
                         } else {
@@ -216,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INICIALIZAÇÃO ---
     function inicializarApp() {
         carregarItemsDoLocalStorage();
-        renderizarLista();
+        renderizarLista(); // A renderização inicial também será ordenada
         filtroSelect.value = filtroAtual;
     }
 

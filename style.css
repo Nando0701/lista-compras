@@ -1,3 +1,4 @@
+```css
 /* Estilos Globais e Reset */
 :root {
     --cor-primaria: #007AFF; /* Azul iOS */
@@ -45,9 +46,9 @@ body {
     padding: 0 var(--espacamento-padrao);
     border-bottom: 1px solid #d1d1d6;
     flex-shrink: 0; /* Não permite que o header encolha */
-    position: sticky; /* Mantém no topo, mas não é essencial com overflow:hidden no body */
+    position: sticky; 
     top: 0;
-    z-index: 10; /* Garante que fique acima de outros conteúdos se necessário */
+    z-index: 10; 
 }
 
 #filtro-itens {
@@ -70,13 +71,11 @@ body {
 
 /* Conteúdo Principal (Lista) */
 .app-main {
-    flex-grow: 1; /* Ocupa o espaço restante entre header e footer */
-    overflow-y: auto; /* Permite rolagem vertical APENAS nesta área */
-    -webkit-overflow-scrolling: touch; /* Rolagem suave no iOS */
+    flex-grow: 1; 
+    overflow-y: auto; 
+    -webkit-overflow-scrolling: touch; 
     padding: var(--espacamento-padrao);
-    /* Não precisa de padding-bottom aqui para compensar o footer,
-       pois o footer está fora do fluxo de rolagem do .app-main */
-    background-color: var(--cor-fundo); /* Fundo da área de rolagem */
+    background-color: var(--cor-fundo); 
 }
 
 #lista-de-compras {
@@ -84,7 +83,6 @@ body {
     background-color: var(--cor-fundo-elementos);
     border-radius: 10px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    /* O overflow do .app-main cuida da rolagem da lista */
 }
 
 #lista-de-compras li {
@@ -148,10 +146,10 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: space-around;
-    flex-shrink: 0; /* Não permite que o footer encolha */
-    position: sticky; /* Mantém no rodapé, mas não é essencial com overflow:hidden no body */
+    flex-shrink: 0; 
+    position: sticky; 
     bottom: 0;
-    z-index: 10; /* Garante que fique acima de outros conteúdos se necessário */
+    z-index: 10; 
     box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
 }
 
@@ -165,7 +163,7 @@ body {
     font-size: 1rem;
     border: 1px solid #c8c7cc;
     border-radius: 8px;
-    background-color: #fdfdfd; /* Um pouco diferente para destacar */
+    background-color: #fdfdfd; 
 }
 #novo-item-input::placeholder {
     color: var(--cor-texto-secundario);
