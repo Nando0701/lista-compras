@@ -1,21 +1,41 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- FUNÇÃO PARA AJUSTAR ALTURA DA VIEWPORT DINAMICAMENTE ---
-    function setViewportHeightProperty() {
-        const vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
-    }
-
-    // Define a propriedade --vh no carregamento e no redimensionamento da janela
-    window.addEventListener('load', setViewportHeightProperty);
-    window.addEventListener('resize', setViewportHeightProperty);
-    setViewportHeightProperty(); // Chamada inicial para garantir que seja definida
-
-    // Seletores de Elementos do DOM
     const filtroSelect = document.getElementById('filtro-itens');
     const listaDeComprasUl = document.getElementById('lista-de-compras');
     const novoItemInput = document.getElementById('novo-item-input');
     const salvarBackupBtn = document.getElementById('salvar-backup-btn');
     const abrirBackupBtn = document.getElementById('abrir-backup-btn');
+
+    // --- FUNÇÃO PARA AJUSTAR ALTURA DA VIEWPORT DINAMICAMENTE ---
+    function setViewportHeightProperty() {
+        // Adiciona um pequeno delay para tentar capturar a altura APÓS a animação do teclado
+        setTimeout(() => {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+            // console.log('Altura da viewport recalculada para:', window.innerHeight, 'vh unit:', vh); // Para debug
+        }, 150); // Aumentei um pouco o delay, pode ser ajustado
+    }
+
+    // Define a propriedade --vh no carregamento e no redimensionamento da janela
+    window.addEventListener('load', setViewportHeightProperty);
+    window.addEventListener('resize', setViewportHeightProperty);
+
+    // Adiciona listeners para o input para recalcular a altura quando o teclado aparece/desaparece
+    if (novoItemInput) {
+        novoItemInput.addEventListener('focus', () => {
+            // console.log('Input focado, recalculando altura...'); // Para debug
+            setViewportHeightProperty();
+        });
+        novoItemInput.addEventListener('blur', () => {
+            // console.log('Input perdeu foco, recalculando altura...'); // Para debug
+            // Quando o input perde o foco, o teclado deve se recolher.
+            // É importante recalcular a altura aqui.
+            setViewportHeightProperty();
+            // Pode ser útil forçar o scroll para o topo se o layout ainda estiver problemático
+            // window.scrollTo(0, 0); // Descomente para testar se necessário
+        });
+    }
+    
+    setViewportHeightProperty(); // Chamada inicial para garantir que seja definida
 
     // Estado da Aplicação
     let items = [];
@@ -51,8 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (filtroAtual === 'a-comprar') {
             itemsParaRenderizar = items.filter(item => !item.marcado);
         } else if (filtroAtual === 'nao-selecionados') {
-            // Por enquanto, "não selecionados" também são os não marcados.
-            // Esta lógica pode ser ajustada conforme a definição de "selecionado".
             itemsParaRenderizar = items.filter(item => !item.marcado);
         }
 
@@ -145,8 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
         linkElement.setAttribute('href', dataUri);
         linkElement.setAttribute('download', exportFileDefaultName);
         linkElement.click();
-        // Removido o alert daqui, pois o download deve ser indicação suficiente.
-        // Pode ser adicionado um feedback mais sutil na UI se desejado.
     }
 
     function abrirBackup() {
