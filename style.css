@@ -3,24 +3,25 @@
     --cor-primaria: #007AFF; /* Azul iOS */
     --cor-secundaria: #34C759; /* Verde iOS */
     --cor-destaque: #FF3B30; /* Vermelho iOS */
-    --cor-fundo: #f0f0f7; /* Um cinza claro, similar ao iOS */
+    --cor-fundo: #f0f0f7;
     --cor-fundo-elementos: #ffffff;
     --cor-texto-principal: #000000;
-    --cor-texto-secundario: #8A8A8E; /* Cinza para placeholders e textos secundários */
+    --cor-texto-secundario: #8A8A8E;
     --altura-header: 60px;
-    --altura-footer: 120px; /* Ajustado para input e botões */
+    --altura-footer: 120px;
     --espacamento-padrao: 15px;
+    /* --vh será definido pelo JavaScript para altura dinâmica da viewport */
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent; /* Remove o destaque azul ao tocar em links/botões no iOS */
+    -webkit-tap-highlight-color: transparent;
 }
 
 html {
-    font-size: 16px; /* Base para REMs */
+    height: 100%; /* Garante que o body possa usar 100% da altura do html */
 }
 
 body {
@@ -29,8 +30,9 @@ body {
     color: var(--cor-texto-principal);
     display: flex;
     flex-direction: column;
-    height: 100vh; /* Ocupa a altura total da viewport */
-    overflow: hidden; /* Evita scroll no body, o scroll será no main */
+    /* Usa a altura calculada pelo JS, com fallback para 100vh se --vh não estiver definido */
+    height: calc(var(--vh, 1vh) * 100);
+    overflow: hidden; /* Previne rolagem no body, a rolagem será no .app-main */
 }
 
 /* Cabeçalho */
@@ -41,8 +43,11 @@ body {
     align-items: center;
     justify-content: center;
     padding: 0 var(--espacamento-padrao);
-    border-bottom: 1px solid #d1d1d6; /* Linha divisória sutil */
-    flex-shrink: 0; /* Não encolher */
+    border-bottom: 1px solid #d1d1d6;
+    flex-shrink: 0; /* Não permite que o header encolha */
+    position: sticky; /* Mantém no topo, mas não é essencial com overflow:hidden no body */
+    top: 0;
+    z-index: 10; /* Garante que fique acima de outros conteúdos se necessário */
 }
 
 #filtro-itens {
@@ -54,7 +59,7 @@ body {
     background-color: var(--cor-fundo-elementos);
     font-size: 1rem;
     color: var(--cor-texto-principal);
-    appearance: none; /* Remove estilo padrão do select */
+    appearance: none;
     -webkit-appearance: none;
     background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007AFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
     background-repeat: no-repeat;
@@ -65,11 +70,13 @@ body {
 
 /* Conteúdo Principal (Lista) */
 .app-main {
-    flex-grow: 1; /* Ocupa o espaço restante */
-    overflow-y: auto; /* Permite rolagem vertical */
+    flex-grow: 1; /* Ocupa o espaço restante entre header e footer */
+    overflow-y: auto; /* Permite rolagem vertical APENAS nesta área */
     -webkit-overflow-scrolling: touch; /* Rolagem suave no iOS */
     padding: var(--espacamento-padrao);
-    padding-bottom: calc(var(--altura-footer) + var(--espacamento-padrao)); /* Garante espaço para não sobrepor footer */
+    /* Não precisa de padding-bottom aqui para compensar o footer,
+       pois o footer está fora do fluxo de rolagem do .app-main */
+    background-color: var(--cor-fundo); /* Fundo da área de rolagem */
 }
 
 #lista-de-compras {
@@ -77,14 +84,15 @@ body {
     background-color: var(--cor-fundo-elementos);
     border-radius: 10px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    /* O overflow do .app-main cuida da rolagem da lista */
 }
 
 #lista-de-compras li {
     display: flex;
     align-items: center;
     padding: 12px var(--espacamento-padrao);
-    border-bottom: 1px solid #e5e5ea; /* Divisor de item mais sutil */
-    min-height: 50px; /* Altura mínima para toque */
+    border-bottom: 1px solid #e5e5ea;
+    min-height: 50px;
 }
 
 #lista-de-compras li:last-child {
@@ -99,22 +107,19 @@ body {
     word-break: break-word;
 }
 
-/* Estilo para item marcado (a ser definido pela funcionalidade do carrinho) */
 #lista-de-compras li.marcado .nome-item {
     text-decoration: line-through;
     color: var(--cor-texto-secundario);
 }
 #lista-de-compras li.marcado .btn-carrinho svg {
-    fill: var(--cor-secundaria); /* Verde quando marcado */
+    fill: var(--cor-secundaria);
 }
 
-
-/* Botões nos itens da lista */
 .btn-carrinho, .btn-lixeira {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 8px; /* Área de toque maior */
+    padding: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -123,18 +128,16 @@ body {
 .btn-carrinho svg, .btn-lixeira svg {
     width: 24px;
     height: 24px;
-    fill: var(--cor-texto-secundario); /* Cor padrão dos ícones */
+    fill: var(--cor-texto-secundario);
     transition: fill 0.2s ease;
 }
 
 .btn-carrinho:hover svg {
     fill: var(--cor-secundaria);
 }
-
 .btn-lixeira:hover svg {
     fill: var(--cor-destaque);
 }
-
 
 /* Rodapé */
 .app-footer {
@@ -144,8 +147,11 @@ body {
     padding: var(--espacamento-padrao);
     display: flex;
     flex-direction: column;
-    justify-content: space-around; /* Distribui espaço entre input e botões */
-    flex-shrink: 0; /* Não encolher */
+    justify-content: space-around;
+    flex-shrink: 0; /* Não permite que o footer encolha */
+    position: sticky; /* Mantém no rodapé, mas não é essencial com overflow:hidden no body */
+    bottom: 0;
+    z-index: 10; /* Garante que fique acima de outros conteúdos se necessário */
     box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
 }
 
@@ -159,7 +165,7 @@ body {
     font-size: 1rem;
     border: 1px solid #c8c7cc;
     border-radius: 8px;
-    background-color: #f8f8f8; /* Um pouco diferente para destacar */
+    background-color: #fdfdfd; /* Um pouco diferente para destacar */
 }
 #novo-item-input::placeholder {
     color: var(--cor-texto-secundario);
@@ -167,7 +173,7 @@ body {
 
 .backup-container {
     display: flex;
-    gap: 10px; /* Espaço entre os botões de backup */
+    gap: 10px;
 }
 
 .backup-container button {
@@ -197,7 +203,6 @@ body {
     background-color: #403ea6;
 }
 
-/* Mensagem de lista vazia */
 .lista-vazia-mensagem {
     text-align: center;
     padding: 30px;

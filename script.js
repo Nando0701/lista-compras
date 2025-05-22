@@ -1,4 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- FUNÇÃO PARA AJUSTAR ALTURA DA VIEWPORT DINAMICAMENTE ---
+    function setViewportHeightProperty() {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+
+    // Define a propriedade --vh no carregamento e no redimensionamento da janela
+    window.addEventListener('load', setViewportHeightProperty);
+    window.addEventListener('resize', setViewportHeightProperty);
+    setViewportHeightProperty(); // Chamada inicial para garantir que seja definida
+
     // Seletores de Elementos do DOM
     const filtroSelect = document.getElementById('filtro-itens');
     const listaDeComprasUl = document.getElementById('lista-de-compras');
@@ -7,8 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const abrirBackupBtn = document.getElementById('abrir-backup-btn');
 
     // Estado da Aplicação
-    let items = []; // Array para armazenar os itens da lista
-    let filtroAtual = 'todos'; // 'todos', 'a-comprar', 'nao-selecionados'
+    let items = [];
+    let filtroAtual = 'todos';
 
     // --- ÍCONES SVG ---
     const ICONE_CARRINHO = `
@@ -30,26 +41,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (itemsSalvos) {
             items = JSON.parse(itemsSalvos);
         }
-        // Se não houver itens salvos, 'items' continuará como um array vazio.
     }
 
     // --- FUNÇÕES DE RENDERIZAÇÃO E MANIPULAÇÃO DA LISTA ---
     function renderizarLista() {
-        listaDeComprasUl.innerHTML = ''; // Limpa a lista atual no DOM
+        listaDeComprasUl.innerHTML = '';
 
         let itemsParaRenderizar = items;
-
-        // Aplica o filtro selecionado
         if (filtroAtual === 'a-comprar') {
-            // Esta lógica dependerá de como "a-comprar" é definido.
-            // Por agora, vamos assumir que itens não marcados (comprado: false) são "a-comprar".
-            itemsParaRenderizar = items.filter(item => !item.marcado); // 'marcado' será a propriedade
+            itemsParaRenderizar = items.filter(item => !item.marcado);
         } else if (filtroAtual === 'nao-selecionados') {
-            // Lógica para "não selecionados" - A ser definida
-            // Por enquanto, mostra todos, similar a 'todos'
-            itemsParaRenderizar = items.filter(item => !item.marcado); // Exemplo, pode mudar
+            // Por enquanto, "não selecionados" também são os não marcados.
+            // Esta lógica pode ser ajustada conforme a definição de "selecionado".
+            itemsParaRenderizar = items.filter(item => !item.marcado);
         }
-        // Se 'todos', itemsParaRenderizar já é a lista completa.
 
         if (itemsParaRenderizar.length === 0) {
             const liVazia = document.createElement('li');
@@ -66,23 +71,20 @@ document.addEventListener('DOMContentLoaded', () => {
         itemsParaRenderizar.forEach(item => {
             const li = document.createElement('li');
             li.dataset.id = item.id;
-            if (item.marcado) { // Usaremos 'marcado' para o estado do carrinho/seleção
+            if (item.marcado) {
                 li.classList.add('marcado');
             }
 
-            // Botão Carrinho
             const btnCarrinho = document.createElement('button');
             btnCarrinho.classList.add('btn-carrinho');
             btnCarrinho.innerHTML = ICONE_CARRINHO;
             btnCarrinho.setAttribute('aria-label', item.marcado ? 'Desmarcar item' : 'Marcar item');
             btnCarrinho.addEventListener('click', () => toggleMarcarItem(item.id));
 
-            // Nome do Item
             const nomeSpan = document.createElement('span');
             nomeSpan.classList.add('nome-item');
             nomeSpan.textContent = item.nome;
 
-            // Botão Lixeira
             const btnLixeira = document.createElement('button');
             btnLixeira.classList.add('btn-lixeira');
             btnLixeira.innerHTML = ICONE_LIXEIRA;
@@ -99,22 +101,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function adicionarNovoItem() {
         const nomeDoItem = novoItemInput.value.trim();
         if (nomeDoItem === '') {
-            // Poderia mostrar uma mensagem mais sutil em vez de alert
-            console.warn('Tentativa de adicionar item vazio.');
             return;
         }
-
         const novoItem = {
-            id: Date.now().toString(), // ID único como string
+            id: Date.now().toString(),
             nome: nomeDoItem,
-            marcado: false // Novo item começa como não marcado/não no carrinho
+            marcado: false
         };
-
-        items.unshift(novoItem); // Adiciona no início da lista para visualização imediata
-        novoItemInput.value = ''; // Limpa o input
+        items.unshift(novoItem);
+        novoItemInput.value = '';
         salvarItemsNoLocalStorage();
         renderizarLista();
-        // novoItemInput.focus(); // Pode ser irritante no mobile reabrir o teclado sempre
     }
 
     function toggleMarcarItem(idDoItem) {
@@ -122,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (itemIndex > -1) {
             items[itemIndex].marcado = !items[itemIndex].marcado;
             salvarItemsNoLocalStorage();
-            renderizarLista(); // Re-renderiza para atualizar o estilo e o aria-label
+            renderizarLista();
         }
     }
 
@@ -135,29 +132,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- FUNÇÕES DE BACKUP (Placeholder) ---
+    // --- FUNÇÕES DE BACKUP ---
     function salvarBackup() {
         if (items.length === 0) {
             alert("Sua lista está vazia. Não há nada para salvar.");
             return;
         }
-        const dataStr = JSON.stringify(items, null, 2); // Formato JSON legível
+        const dataStr = JSON.stringify(items, null, 2);
         const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-        
         const exportFileDefaultName = `lista_compras_backup_${new Date().toISOString().slice(0,10)}.json`;
-        
         const linkElement = document.createElement('a');
         linkElement.setAttribute('href', dataUri);
         linkElement.setAttribute('download', exportFileDefaultName);
-        linkElement.click(); // Simula o clique para iniciar o download
-        alert("Backup salvo! Verifique seus downloads.");
+        linkElement.click();
+        // Removido o alert daqui, pois o download deve ser indicação suficiente.
+        // Pode ser adicionado um feedback mais sutil na UI se desejado.
     }
 
     function abrirBackup() {
         const inputArquivo = document.createElement('input');
         inputArquivo.type = 'file';
-        inputArquivo.accept = '.json,application/json'; // Aceita arquivos .json
-        
+        inputArquivo.accept = '.json,application/json';
         inputArquivo.onchange = event => {
             const arquivo = event.target.files[0];
             if (arquivo) {
@@ -165,7 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 reader.onload = (e) => {
                     try {
                         const itemsImportados = JSON.parse(e.target.result);
-                        // Validação básica dos itens importados (opcional, mas bom ter)
                         if (Array.isArray(itemsImportados) && itemsImportados.every(item => item.id && item.nome !== undefined && typeof item.marcado === 'boolean')) {
                             if (confirm("Isso substituirá sua lista atual. Deseja continuar?")) {
                                 items = itemsImportados;
@@ -184,26 +178,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 reader.readAsText(arquivo);
             }
         };
-        inputArquivo.click(); // Abre a caixa de diálogo para selecionar arquivo
+        inputArquivo.click();
     }
 
-
     // --- EVENT LISTENERS ---
-    // Adicionar item com a tecla "Enter" no input
     novoItemInput.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
-            event.preventDefault(); // Previne qualquer comportamento padrão do Enter (ex: submit de formulário)
+            event.preventDefault();
             adicionarNovoItem();
         }
     });
 
-    // Mudar filtro
     filtroSelect.addEventListener('change', (event) => {
         filtroAtual = event.target.value;
         renderizarLista();
     });
 
-    // Botões de Backup
     salvarBackupBtn.addEventListener('click', salvarBackup);
     abrirBackupBtn.addEventListener('click', abrirBackup);
 
@@ -211,8 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function inicializarApp() {
         carregarItemsDoLocalStorage();
         renderizarLista();
-        // Define o valor do select para o filtro atual (caso a página seja recarregada)
-        filtroSelect.value = filtroAtual; 
+        filtroSelect.value = filtroAtual;
     }
 
     inicializarApp();
