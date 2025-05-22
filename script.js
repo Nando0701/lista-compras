@@ -1,135 +1,3 @@
-/* Conteúdo Principal (Lista) */
-.app-main {
-    flex-grow: 1; 
-    overflow-y: auto; 
-    -webkit-overflow-scrolling: touch; 
-    padding: var(--espacamento-padrao);
-    background-color: var(--cor-fundo); 
-}
-
-#lista-de-compras {
-    list-style-type: none;
-    background-color: var(--cor-fundo-elementos);
-    border-radius: 10px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-#lista-de-compras li {
-    display: flex;
-    align-items: center;
-    padding: 12px var(--espacamento-padrao);
-    border-bottom: 1px solid #e5e5ea;
-    min-height: 50px;
-}
-
-#lista-de-compras li:last-child {
-    border-bottom: none;
-}
-
-.nome-item {
-    flex-grow: 1;
-    margin: 0 10px;
-    font-size: 1.05rem;
-    color: var(--cor-texto-principal);
-    word-break: break-word;
-}
-
-#lista-de-compras li.marcado .nome-item {
-    text-decoration: line-through;
-    color: var(--cor-texto-secundario);
-}
-#lista-de-compras li.marcado .btn-carrinho svg {
-    fill: var(--cor-secundaria);
-}
-
-.btn-carrinho, .btn-lixeira {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn-carrinho svg, .btn-lixeira svg {
-    width: 24px;
-    height: 24px;
-    fill: var(--cor-texto-secundario);
-    transition: fill 0.2s ease;
-}
-
-.btn-carrinho:hover svg {
-    fill: var(--cor-secundaria);
-}
-.btn-lixeira:hover svg {
-    fill: var(--cor-destaque);
-}
-
-/* Rodapé */
-.app-footer {
-    height: var(--altura-footer);
-    background-color: var(--cor-fundo-elementos);
-    border-top: 1px solid #d1d1d6;
-    padding: var(--espacamento-padrao);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    flex-shrink: 0; 
-    position: sticky; 
-    bottom: 0;
-    z-index: 10; 
-    box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
-}
-
-.input-container {
-    margin-bottom: 10px;
-}
-
-#novo-item-input {
-    width: 100%;
-    padding: 12px;
-    font-size: 1rem;
-    border: 1px solid #c8c7cc;
-    border-radius: 8px;
-    background-color: #fdfdfd; 
-}
-#novo-item-input::placeholder {
-    color: var(--cor-texto-secundario);
-}
-
-.backup-container {
-    display: flex;
-    gap: 10px;
-}
-
-.backup-container button {
-    flex-grow: 1;
-    padding: 10px;
-    font-size: 0.95rem;
-    font-weight: 500;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-#salvar-backup-btn {
-    background-color: var(--cor-primaria);
-    color: white;
-}
-#salvar-backup-btn:hover {
-    background-color: #005bb5;
-}
-
-#abrir-backup-btn {
-    background-color: #5856d6; /* Roxo iOS */
-    color: white;
-}
-#abrir-backup-btn:hover {
-    background-color: #403ea6;
-}
-
 .lista-vazia-mensagem {
     text-align: center;
     padding: 30px;
@@ -146,35 +14,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- FUNÇÃO PARA AJUSTAR ALTURA DA VIEWPORT DINAMICAMENTE ---
     function setViewportHeightProperty() {
-        // Adiciona um pequeno delay para tentar capturar a altura APÓS a animação do teclado
         setTimeout(() => {
             const vh = window.innerHeight * 0.01;
             document.documentElement.style.setProperty('--vh', `${vh}px`);
-            // console.log('Altura da viewport recalculada para:', window.innerHeight, 'vh unit:', vh); // Para debug
-        }, 150); // Aumentei um pouco o delay, pode ser ajustado
+        }, 150); 
     }
 
-    // Define a propriedade --vh no carregamento e no redimensionamento da janela
     window.addEventListener('load', setViewportHeightProperty);
     window.addEventListener('resize', setViewportHeightProperty);
 
-    // Adiciona listeners para o input para recalcular a altura quando o teclado aparece/desaparece
     if (novoItemInput) {
-        novoItemInput.addEventListener('focus', () => {
-            // console.log('Input focado, recalculando altura...'); // Para debug
-            setViewportHeightProperty();
-        });
-        novoItemInput.addEventListener('blur', () => {
-            // console.log('Input perdeu foco, recalculando altura...'); // Para debug
-            // Quando o input perde o foco, o teclado deve se recolher.
-            // É importante recalcular a altura aqui.
-            setViewportHeightProperty();
-            // Pode ser útil forçar o scroll para o topo se o layout ainda estiver problemático
-            // window.scrollTo(0, 0); // Descomente para testar se necessário
-        });
+        novoItemInput.addEventListener('focus', setViewportHeightProperty);
+        novoItemInput.addEventListener('blur', setViewportHeightProperty);
     }
     
-    setViewportHeightProperty(); // Chamada inicial para garantir que seja definida
+    setViewportHeightProperty(); // Chamada inicial
 
     // Estado da Aplicação
     let items = [];
@@ -206,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderizarLista() {
         listaDeComprasUl.innerHTML = '';
 
-        let itemsParaRenderizar = [...items]; // Cria uma cópia para não modificar o array original 'items' diretamente com o sort
+        let itemsParaRenderizar = [...items]; // Cria uma cópia para não modificar 'items' com o sort
 
         // Aplica o filtro selecionado
         if (filtroAtual === 'a-comprar') {
@@ -216,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Ordena os itens alfabeticamente pelo nome (case-insensitive)
+        // Esta é a alteração principal para ordenação
         itemsParaRenderizar.sort((a, b) => 
             a.nome.localeCompare(b.nome, undefined, { sensitivity: 'base' })
         );
@@ -272,10 +127,12 @@ document.addEventListener('DOMContentLoaded', () => {
             nome: nomeDoItem,
             marcado: false
         };
-        items.unshift(novoItem); // Adiciona no início para feedback imediato, a ordenação cuidará da posição final
+        // Mantém a adição no início do array 'items' para consistência,
+        // a ordenação em renderizarLista() cuidará da exibição correta.
+        items.unshift(novoItem); 
         novoItemInput.value = '';
         salvarItemsNoLocalStorage();
-        renderizarLista(); // A renderização agora inclui a ordenação
+        renderizarLista(); 
     }
 
     function toggleMarcarItem(idDoItem) {
@@ -325,9 +182,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (Array.isArray(itemsImportados) && itemsImportados.every(item => item.id && item.nome !== undefined && typeof item.marcado === 'boolean')) {
                             if (confirm("Isso substituirá sua lista atual. Deseja continuar?")) {
                                 items = itemsImportados;
-                                // Após carregar o backup, é bom re-renderizar para aplicar a ordenação
                                 salvarItemsNoLocalStorage(); 
-                                renderizarLista(); 
+                                renderizarLista(); // Garante que a lista importada também seja ordenada
                                 alert("Backup restaurado com sucesso!");
                             }
                         } else {
@@ -363,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INICIALIZAÇÃO ---
     function inicializarApp() {
         carregarItemsDoLocalStorage();
-        renderizarLista(); // A renderização inicial também será ordenada
+        renderizarLista(); 
         filtroSelect.value = filtroAtual;
     }
 
