@@ -1,10 +1,3 @@
-.lista-vazia-mensagem {
-    text-align: center;
-    padding: 30px;
-    color: var(--cor-texto-secundario);
-    font-size: 1rem;
-}
-```javascript
 document.addEventListener('DOMContentLoaded', () => {
     const filtroSelect = document.getElementById('filtro-itens');
     const listaDeComprasUl = document.getElementById('lista-de-compras');
@@ -60,17 +53,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderizarLista() {
         listaDeComprasUl.innerHTML = '';
 
-        let itemsParaRenderizar = [...items]; // Cria uma cópia para não modificar 'items' com o sort
+        let itemsParaRenderizar = [...items]; 
 
-        // Aplica o filtro selecionado
         if (filtroAtual === 'a-comprar') {
             itemsParaRenderizar = itemsParaRenderizar.filter(item => !item.marcado);
         } else if (filtroAtual === 'nao-selecionados') {
             itemsParaRenderizar = itemsParaRenderizar.filter(item => !item.marcado); 
         }
         
-        // Ordena os itens alfabeticamente pelo nome (case-insensitive)
-        // Esta é a alteração principal para ordenação
         itemsParaRenderizar.sort((a, b) => 
             a.nome.localeCompare(b.nome, undefined, { sensitivity: 'base' })
         );
@@ -127,8 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
             nome: nomeDoItem,
             marcado: false
         };
-        // Mantém a adição no início do array 'items' para consistência,
-        // a ordenação em renderizarLista() cuidará da exibição correta.
         items.unshift(novoItem); 
         novoItemInput.value = '';
         salvarItemsNoLocalStorage();
@@ -183,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (confirm("Isso substituirá sua lista atual. Deseja continuar?")) {
                                 items = itemsImportados;
                                 salvarItemsNoLocalStorage(); 
-                                renderizarLista(); // Garante que a lista importada também seja ordenada
+                                renderizarLista(); 
                                 alert("Backup restaurado com sucesso!");
                             }
                         } else {
@@ -201,9 +189,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- EVENT LISTENERS ---
-    novoItemInput.addEventListener('keypress', (event) => {
+    // Alterado de 'keypress' para 'keydown' para melhor compatibilidade com a tecla Enter
+    novoItemInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
-            event.preventDefault();
+            event.preventDefault(); // Previne o comportamento padrão do Enter (ex: submeter formulário)
             adicionarNovoItem();
         }
     });

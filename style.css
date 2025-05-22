@@ -1,4 +1,3 @@
-```css
 /* Estilos Globais e Reset */
 :root {
     --cor-primaria: #007AFF; /* Azul iOS */
@@ -171,11 +170,11 @@ body {
 
 .backup-container {
     display: flex;
-    gap: 10px;
+    gap: 10px; /* Mantém o espaçamento entre os botões */
 }
 
 .backup-container button {
-    flex-grow: 1;
+    flex: 1; /* Alterado: Usa flex shorthand para distribuir espaço. Grow 1, Shrink 1, Basis 0% */
     padding: 10px;
     font-size: 0.95rem;
     font-weight: 500;
@@ -199,4 +198,11 @@ body {
 }
 #abrir-backup-btn:hover {
     background-color: #403ea6;
+}
+
+.lista-vazia-mensagem {
+    text-align: center;
+    padding: 30px;
+    color: var(--cor-texto-secundario);
+    font-size: 1rem;
 }
