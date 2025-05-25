@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setViewportHeightProperty(); // Chamada inicial
 
     // Estado da Aplicação
-    let items = [];
+    let items = []; // Inicializa como array vazio
     let filtroAtual = 'todos';
 
     // --- ÍCONES SVG ---
@@ -43,10 +43,31 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('listaDeComprasItemsV2', JSON.stringify(items));
     }
 
+    // Função carregarItemsDoLocalStorage ATUALIZADA para maior robustez
     function carregarItemsDoLocalStorage() {
         const itemsSalvos = localStorage.getItem('listaDeComprasItemsV2');
         if (itemsSalvos) {
-            items = JSON.parse(itemsSalvos);
+            try {
+                const parsedItems = JSON.parse(itemsSalvos);
+                // Verifica se o resultado do parse é um array
+                if (Array.isArray(parsedItems)) {
+                    items = parsedItems;
+                } else {
+                    // Se não for um array (ex: JSON.parse("null") retorna null),
+                    // redefina 'items' para um array vazio para evitar erros.
+                    items = [];
+                    console.warn("Dados do localStorage não eram um array. Lista redefinida para vazia.");
+                }
+            } catch (e) {
+                // Se houver um erro ao fazer o parse do JSON (ex: JSON malformado),
+                // redefina 'items' para um array vazio.
+                console.error("Erro ao carregar itens do localStorage:", e);
+                items = [];
+            }
+        } else {
+            // Se não houver 'itemsSalvos' (primeira vez usando ou localStorage limpo),
+            // garante que 'items' seja um array vazio.
+            items = [];
         }
     }
 
@@ -99,7 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
             btnLixeira.classList.add('btn-lixeira');
             btnLixeira.innerHTML = ICONE_LIXEIRA;
             btnLixeira.setAttribute('aria-label', 'Remover item');
-            // Modificação aqui: passar o evento para removerItemDaLista
             btnLixeira.addEventListener('click', (event) => removerItemDaLista(event, item.id));
 
             li.appendChild(btnCarrinho);
@@ -119,6 +139,10 @@ document.addEventListener('DOMContentLoaded', () => {
             nome: nomeDoItem,
             marcado: false
         };
+        // Garante que 'items' é um array antes de usar 'unshift'
+        if (!Array.isArray(items)) {
+            items = []; // Segurança adicional, embora carregarItemsDoLocalStorage já deva garantir isso.
+        }
         items.unshift(novoItem); 
         novoItemInput.value = '';
         salvarItemsNoLocalStorage();
@@ -134,16 +158,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Modificação aqui: a função agora aceita 'event' como primeiro parâmetro
     function removerItemDaLista(event, idDoItem) {
         const itemParaRemover = items.find(item => item.id === idDoItem);
         if (itemParaRemover && confirm(`Tem certeza que deseja remover "${itemParaRemover.nome}" da lista?`)) {
-            
-            // Tenta remover o foco do botão que foi clicado
             if (event && event.currentTarget && typeof event.currentTarget.blur === 'function') {
                 event.currentTarget.blur();
             }
-
             items = items.filter(item => item.id !== idDoItem);
             salvarItemsNoLocalStorage();
             renderizarLista();
@@ -215,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INICIALIZAÇÃO ---
     function inicializarApp() {
-        carregarItemsDoLocalStorage();
+        carregarItemsDoLocalStorage(); // Agora mais robusta
         renderizarLista(); 
         filtroSelect.value = filtroAtual;
     }
