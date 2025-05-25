@@ -1,16 +1,15 @@
 /* Estilos Globais e Reset */
 :root {
     --cor-primaria: #007AFF; /* Azul iOS */
-    --cor-secundaria: #34C759; /* Verde iOS */
-    --cor-destaque: #FF3B30; /* Vermelho iOS */
+    --cor-secundaria: #34C759; /* Verde iOS (para "No Carrinho") */
+    --cor-destaque: #FF3B30; /* Vermelho iOS (para "Comprar") */
     --cor-fundo: #f0f0f7;
     --cor-fundo-elementos: #ffffff;
     --cor-texto-principal: #000000;
-    --cor-texto-secundario: #8A8A8E;
+    --cor-texto-secundario: #8A8A8E; /* Cinza (para Default e texto de item comprado) */
     --altura-header: 60px;
     --altura-footer: 120px;
     --espacamento-padrao: 15px;
-    /* --vh será definido pelo JavaScript para altura dinâmica da viewport */
 }
 
 * {
@@ -21,7 +20,7 @@
 }
 
 html {
-    height: 100%; /* Garante que o body possa usar 100% da altura do html */
+    height: 100%;
 }
 
 body {
@@ -30,9 +29,8 @@ body {
     color: var(--cor-texto-principal);
     display: flex;
     flex-direction: column;
-    /* Usa a altura calculada pelo JS, com fallback para 100vh se --vh não estiver definido */
     height: calc(var(--vh, 1vh) * 100);
-    overflow: hidden; /* Previne rolagem no body, a rolagem será no .app-main */
+    overflow: hidden;
 }
 
 /* Cabeçalho */
@@ -44,7 +42,7 @@ body {
     justify-content: center;
     padding: 0 var(--espacamento-padrao);
     border-bottom: 1px solid #d1d1d6;
-    flex-shrink: 0; /* Não permite que o header encolha */
+    flex-shrink: 0;
     position: sticky; 
     top: 0;
     z-index: 10; 
@@ -57,7 +55,7 @@ body {
     border: 1px solid #c8c7cc;
     border-radius: 8px;
     background-color: var(--cor-fundo-elementos);
-    font-size: 1rem;
+    font-size: 0.9rem; /* Reduzido para caber mais texto nas opções */
     color: var(--cor-texto-principal);
     appearance: none;
     -webkit-appearance: none;
@@ -102,15 +100,31 @@ body {
     font-size: 1.05rem;
     color: var(--cor-texto-principal);
     word-break: break-word;
+    transition: color 0.2s ease, text-decoration 0.2s ease;
 }
 
-#lista-de-compras li.marcado .nome-item {
+/* Estilos baseados no statusCompra */
+/* Default (Cinza) - Ícone do carrinho já é cinza por padrão */
+/* #lista-de-compras li.status-default .btn-carrinho svg { fill: var(--cor-texto-secundario); } */
+
+/* Comprar (Vermelho) */
+#lista-de-compras li.status-comprar .btn-carrinho svg {
+    fill: var(--cor-destaque);
+}
+#lista-de-compras li.status-comprar .nome-item {
+    color: var(--cor-destaque); /* Opcional: Destaca o nome do item também */
+    font-weight: 600; /* Opcional: Deixa em negrito */
+}
+
+/* No Carrinho (Verde) */
+#lista-de-compras li.status-no-carrinho .btn-carrinho svg {
+    fill: var(--cor-secundaria);
+}
+#lista-de-compras li.status-no-carrinho .nome-item {
     text-decoration: line-through;
     color: var(--cor-texto-secundario);
 }
-#lista-de-compras li.marcado .btn-carrinho svg {
-    fill: var(--cor-secundaria);
-}
+
 
 .btn-carrinho, .btn-lixeira {
     background: none;
@@ -125,13 +139,13 @@ body {
 .btn-carrinho svg, .btn-lixeira svg {
     width: 24px;
     height: 24px;
-    fill: var(--cor-texto-secundario);
+    fill: var(--cor-texto-secundario); /* Cor default do ícone (cinza) */
     transition: fill 0.2s ease;
 }
 
-.btn-carrinho:hover svg {
-    fill: var(--cor-secundaria);
-}
+/* Remove o :hover do carrinho, pois o estado é controlado pelo JS e classes */
+/* .btn-carrinho:hover svg { fill: var(--cor-secundaria); } */
+
 .btn-lixeira:hover svg {
     fill: var(--cor-destaque);
 }
@@ -170,11 +184,11 @@ body {
 
 .backup-container {
     display: flex;
-    gap: 10px; /* Mantém o espaçamento entre os botões */
+    gap: 10px; 
 }
 
 .backup-container button {
-    flex: 1; /* Alterado: Usa flex shorthand para distribuir espaço. Grow 1, Shrink 1, Basis 0% */
+    flex: 1; 
     padding: 10px;
     font-size: 0.95rem;
     font-weight: 500;

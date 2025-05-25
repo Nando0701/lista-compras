@@ -1,3 +1,4 @@
+```javascript
 document.addEventListener('DOMContentLoaded', () => {
     const filtroSelect = document.getElementById('filtro-itens');
     const listaDeComprasUl = document.getElementById('lista-de-compras');
@@ -5,7 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const salvarBackupBtn = document.getElementById('salvar-backup-btn');
     const abrirBackupBtn = document.getElementById('abrir-backup-btn');
 
-    // --- FUNÇÃO PARA AJUSTAR ALTURA DA VIEWPORT DINAMICAMENTE ---
     function setViewportHeightProperty() {
         setTimeout(() => {
             const vh = window.innerHeight * 0.01;
@@ -21,13 +21,11 @@ document.addEventListener('DOMContentLoaded', () => {
         novoItemInput.addEventListener('blur', setViewportHeightProperty);
     }
     
-    setViewportHeightProperty(); // Chamada inicial
+    setViewportHeightProperty();
 
-    // Estado da Aplicação
-    let items = []; // Inicializa como array vazio
-    let filtroAtual = 'todos';
+    let items = []; 
+    let filtroAtual = 'todos'; // Opções: 'todos', 'a-comprar', 'no-carrinho', 'default'
 
-    // --- ÍCONES SVG ---
     const ICONE_CARRINHO = `
         <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
             <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59L3.62 17H19v-2H7l1.1-2h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A.996.996 0 0021.79 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"></path>
@@ -37,50 +35,55 @@ document.addEventListener('DOMContentLoaded', () => {
             <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path>
         </svg>`;
 
-    // --- FUNÇÕES DE PERSISTÊNCIA (Local Storage) ---
     function salvarItemsNoLocalStorage() {
-        localStorage.setItem('listaDeComprasItemsV2', JSON.stringify(items));
+        localStorage.setItem('listaDeComprasItemsV3', JSON.stringify(items)); // Chave atualizada para V3 devido à mudança de estrutura
     }
 
-    // Função carregarItemsDoLocalStorage ATUALIZADA para maior robustez
     function carregarItemsDoLocalStorage() {
-        const itemsSalvos = localStorage.getItem('listaDeComprasItemsV2');
+        const itemsSalvos = localStorage.getItem('listaDeComprasItemsV3'); // Usa a nova chave
+        let tempItems = [];
         if (itemsSalvos) {
             try {
                 const parsedItems = JSON.parse(itemsSalvos);
-                // Verifica se o resultado do parse é um array
                 if (Array.isArray(parsedItems)) {
-                    items = parsedItems;
-                } else {
-                    // Se não for um array (ex: JSON.parse("null") retorna null),
-                    // redefina 'items' para um array vazio para evitar erros.
-                    items = [];
-                    console.warn("Dados do localStorage não eram um array. Lista redefinida para vazia.");
+                    tempItems = parsedItems.map(item => {
+                        // Migração de dados: se statusCompra não existe, tenta derivar de 'marcado'
+                        let statusCompra = 0; // Default
+                        if (item.statusCompra !== undefined) {
+                            statusCompra = item.statusCompra;
+                        } else if (item.marcado === true) { // 'marcado' era para "no carrinho" (verde)
+                            statusCompra = 2;
+                        } // Se 'marcado' era false ou não existia, fica 0 (default)
+                        
+                        return {
+                            ...item,
+                            statusCompra: statusCompra,
+                            marcado: undefined // Remove a propriedade antiga 'marcado'
+                        };
+                    });
                 }
             } catch (e) {
-                // Se houver um erro ao fazer o parse do JSON (ex: JSON malformado),
-                // redefina 'items' para um array vazio.
                 console.error("Erro ao carregar itens do localStorage:", e);
-                items = [];
+                // tempItems continua como array vazio
             }
-        } else {
-            // Se não houver 'itemsSalvos' (primeira vez usando ou localStorage limpo),
-            // garante que 'items' seja um array vazio.
-            items = [];
         }
+        items = tempItems; // Atribui o array processado (ou vazio) a items
     }
 
-    // --- FUNÇÕES DE RENDERIZAÇÃO E MANIPULAÇÃO DA LISTA ---
+
     function renderizarLista() {
         listaDeComprasUl.innerHTML = '';
-
         let itemsParaRenderizar = [...items]; 
 
-        if (filtroAtual === 'a-comprar') {
-            itemsParaRenderizar = itemsParaRenderizar.filter(item => !item.marcado);
-        } else if (filtroAtual === 'nao-selecionados') {
-            itemsParaRenderizar = itemsParaRenderizar.filter(item => !item.marcado); 
+        // Aplica o filtro selecionado
+        if (filtroAtual === 'a-comprar') { // Itens a comprar (vermelho)
+            itemsParaRenderizar = itemsParaRenderizar.filter(item => item.statusCompra === 1);
+        } else if (filtroAtual === 'no-carrinho') { // Itens no carrinho (verde)
+            itemsParaRenderizar = itemsParaRenderizar.filter(item => item.statusCompra === 2);
+        } else if (filtroAtual === 'default') { // Itens default (cinza)
+            itemsParaRenderizar = itemsParaRenderizar.filter(item => item.statusCompra === 0);
         }
+        // Se filtroAtual === 'todos', itemsParaRenderizar já é a lista completa (copiada).
         
         itemsParaRenderizar.sort((a, b) => 
             a.nome.localeCompare(b.nome, undefined, { sensitivity: 'base' })
@@ -101,15 +104,32 @@ document.addEventListener('DOMContentLoaded', () => {
         itemsParaRenderizar.forEach(item => {
             const li = document.createElement('li');
             li.dataset.id = item.id;
-            if (item.marcado) {
-                li.classList.add('marcado');
+            
+            // Limpa classes de status anteriores e adiciona a atual
+            li.classList.remove('status-default', 'status-comprar', 'status-no-carrinho');
+            let ariaLabelCarrinho = '';
+
+            switch (item.statusCompra) {
+                case 1: // Comprar (Vermelho)
+                    li.classList.add('status-comprar');
+                    ariaLabelCarrinho = 'Marcar como "no carrinho" (verde)';
+                    break;
+                case 2: // No Carrinho (Verde)
+                    li.classList.add('status-no-carrinho');
+                    ariaLabelCarrinho = 'Resetar item (cinza)';
+                    break;
+                case 0: // Default (Cinza)
+                default: // Trata qualquer valor inesperado como default
+                    li.classList.add('status-default');
+                    ariaLabelCarrinho = 'Marcar como "a comprar" (vermelho)';
+                    break;
             }
 
             const btnCarrinho = document.createElement('button');
             btnCarrinho.classList.add('btn-carrinho');
             btnCarrinho.innerHTML = ICONE_CARRINHO;
-            btnCarrinho.setAttribute('aria-label', item.marcado ? 'Desmarcar item' : 'Marcar item');
-            btnCarrinho.addEventListener('click', () => toggleMarcarItem(item.id));
+            btnCarrinho.setAttribute('aria-label', ariaLabelCarrinho);
+            btnCarrinho.addEventListener('click', () => ciclarStatusCompra(item.id));
 
             const nomeSpan = document.createElement('span');
             nomeSpan.classList.add('nome-item');
@@ -136,22 +156,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const novoItem = {
             id: Date.now().toString(),
             nome: nomeDoItem,
-            marcado: false
+            statusCompra: 0 // Novo item começa no estado default (0)
         };
-        // Garante que 'items' é um array antes de usar 'unshift'
-        if (!Array.isArray(items)) {
-            items = []; // Segurança adicional, embora carregarItemsDoLocalStorage já deva garantir isso.
-        }
         items.unshift(novoItem); 
         novoItemInput.value = '';
         salvarItemsNoLocalStorage();
         renderizarLista(); 
     }
 
-    function toggleMarcarItem(idDoItem) {
+    // Nova função para ciclar o status de compra
+    function ciclarStatusCompra(idDoItem) {
         const itemIndex = items.findIndex(item => item.id === idDoItem);
         if (itemIndex > -1) {
-            items[itemIndex].marcado = !items[itemIndex].marcado;
+            let statusAtual = items[itemIndex].statusCompra || 0; // Garante que é um número, default 0
+            statusAtual = (statusAtual + 1) % 3; // Cicla 0 -> 1 -> 2 -> 0
+            items[itemIndex].statusCompra = statusAtual;
             salvarItemsNoLocalStorage();
             renderizarLista();
         }
@@ -169,13 +188,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- FUNÇÕES DE BACKUP ---
     function salvarBackup() {
         if (items.length === 0) {
             alert("Sua lista está vazia. Não há nada para salvar.");
             return;
         }
-        const dataStr = JSON.stringify(items, null, 2);
+        const dataStr = JSON.stringify(items.map(item => ({id: item.id, nome: item.nome, statusCompra: item.statusCompra || 0})), null, 2); // Garante que statusCompra seja salvo
         const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
         const exportFileDefaultName = `lista_compras_backup_${new Date().toISOString().slice(0,10)}.json`;
         const linkElement = document.createElement('a');
@@ -195,9 +213,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 reader.onload = (e) => {
                     try {
                         const itemsImportados = JSON.parse(e.target.result);
-                        if (Array.isArray(itemsImportados) && itemsImportados.every(item => item.id && item.nome !== undefined && typeof item.marcado === 'boolean')) {
+                        if (Array.isArray(itemsImportados) && itemsImportados.every(item => item.id && item.nome !== undefined)) {
                             if (confirm("Isso substituirá sua lista atual. Deseja continuar?")) {
-                                items = itemsImportados;
+                                // Mapeia os itens importados para garantir a estrutura correta e migrar 'marcado' se 'statusCompra' não existir
+                                items = itemsImportados.map(importedItem => {
+                                    let statusCompra = 0; // Default
+                                    if (importedItem.statusCompra !== undefined) {
+                                        statusCompra = importedItem.statusCompra;
+                                    } else if (importedItem.marcado === true) {
+                                        statusCompra = 2; // 'marcado' true -> no carrinho
+                                    }
+                                    return {
+                                        id: importedItem.id,
+                                        nome: importedItem.nome,
+                                        statusCompra: statusCompra
+                                    };
+                                });
                                 salvarItemsNoLocalStorage(); 
                                 renderizarLista(); 
                                 alert("Backup restaurado com sucesso!");
@@ -216,7 +247,6 @@ document.addEventListener('DOMContentLoaded', () => {
         inputArquivo.click();
     }
 
-    // --- EVENT LISTENERS ---
     novoItemInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault(); 
@@ -232,9 +262,8 @@ document.addEventListener('DOMContentLoaded', () => {
     salvarBackupBtn.addEventListener('click', salvarBackup);
     abrirBackupBtn.addEventListener('click', abrirBackup);
 
-    // --- INICIALIZAÇÃO ---
     function inicializarApp() {
-        carregarItemsDoLocalStorage(); // Agora mais robusta
+        carregarItemsDoLocalStorage();
         renderizarLista(); 
         filtroSelect.value = filtroAtual;
     }
