@@ -15,16 +15,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('load', setViewportHeightProperty);
     window.addEventListener('resize', setViewportHeightProperty);
+    
+    setViewportHeightProperty(); // Chamada inicial
 
+    // Adiciona listeners para o input DEPOIS de verificar se ele existe
     if (novoItemInput) {
         novoItemInput.addEventListener('focus', setViewportHeightProperty);
         novoItemInput.addEventListener('blur', setViewportHeightProperty);
+        
+        // Listener para adicionar item com "Enter" - AGORA DENTRO DO IF
+        novoItemInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault(); 
+                adicionarNovoItem();
+            }
+        });
+    } else {
+        console.error("ERRO: Elemento 'novo-item-input' não foi encontrado no DOM. A funcionalidade de adicionar itens não funcionará.");
     }
-    
-    setViewportHeightProperty();
 
     let items = []; 
-    let filtroAtual = 'todos'; // Valor inicial do filtro
+    let filtroAtual = 'todos'; 
 
     const ICONE_CARRINHO = `
         <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
@@ -76,13 +87,11 @@ document.addEventListener('DOMContentLoaded', () => {
         listaDeComprasUl.innerHTML = '';
         let itemsParaRenderizar = [...items]; 
 
-        // Lógica de filtro atualizada
         if (filtroAtual === 'a-comprar-ou-no-carrinho') { 
             itemsParaRenderizar = itemsParaRenderizar.filter(item => item.statusCompra === 1 || item.statusCompra === 2);
         } else if (filtroAtual === 'nao-selecionados') { 
             itemsParaRenderizar = itemsParaRenderizar.filter(item => item.statusCompra === 0);
         }
-        // Se filtroAtual === 'todos', itemsParaRenderizar já é a lista completa.
         
         itemsParaRenderizar.sort((a, b) => {
             const nameA = a.nome || ''; 
@@ -149,10 +158,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function adicionarNovoItem() {
-        console.log("adicionarNovoItem chamada"); // Log para depuração
+        // console.log("adicionarNovoItem chamada"); // Removido para produção, mas útil para debug
         const nomeDoItem = novoItemInput.value.trim();
         if (nomeDoItem === '') {
-            console.log("Nome do item vazio, retornando."); // Log para depuração
+            // console.log("Nome do item vazio, retornando."); // Removido para produção
             return;
         }
         const novoItem = {
@@ -162,13 +171,13 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         if (!Array.isArray(items)) {
-            console.error("ERRO CRÍTICO: items não é um array em adicionarNovoItem. Redefinindo para []. Isso não deveria acontecer.");
+            console.error("ERRO CRÍTICO: items não é um array em adicionarNovoItem. Redefinindo para [].");
             items = [];
         }
         items.unshift(novoItem); 
         novoItemInput.value = '';
         salvarItemsNoLocalStorage();
-        console.log("Item adicionado, chamando renderizarLista:", items); // Log para depuração
+        // console.log("Item adicionado, chamando renderizarLista:", items); // Removido para produção
         renderizarLista(); 
     }
 
@@ -254,13 +263,8 @@ document.addEventListener('DOMContentLoaded', () => {
         inputArquivo.click();
     }
 
-    novoItemInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault(); 
-            adicionarNovoItem();
-        }
-    });
-
+    // Event listeners para os botões de filtro, salvar e abrir backup
+    // Estes são adicionados independentemente da existência do novoItemInput
     filtroSelect.addEventListener('change', (event) => {
         filtroAtual = event.target.value;
         renderizarLista();
@@ -272,11 +276,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function inicializarApp() {
         carregarItemsDoLocalStorage();
         renderizarLista(); 
-        // Garante que o select reflita o filtroAtual (que pode ser 'todos' por padrão)
         if (filtroSelect.querySelector(`option[value="${filtroAtual}"]`)) {
             filtroSelect.value = filtroAtual;
         } else {
-            // Se o filtroAtual não for uma opção válida (raro), define para 'todos'
             filtroAtual = 'todos';
             filtroSelect.value = 'todos';
         }
