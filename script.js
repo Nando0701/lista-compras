@@ -1,4 +1,3 @@
-```javascript
 document.addEventListener('DOMContentLoaded', () => {
     const filtroSelect = document.getElementById('filtro-itens');
     const listaDeComprasUl = document.getElementById('lista-de-compras');
