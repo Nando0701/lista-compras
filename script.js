@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setViewportHeightProperty();
 
     let items = []; 
-    let filtroAtual = 'todos'; // Opções: 'todos', 'a-comprar', 'no-carrinho', 'default'
+    let filtroAtual = 'todos'; 
 
     const ICONE_CARRINHO = `
         <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
@@ -36,35 +36,42 @@ document.addEventListener('DOMContentLoaded', () => {
         </svg>`;
 
     function salvarItemsNoLocalStorage() {
-        localStorage.setItem('listaDeComprasItemsV3', JSON.stringify(items)); // Chave atualizada para V3 devido à mudança de estrutura
+        localStorage.setItem('listaDeComprasItemsV3', JSON.stringify(items));
     }
 
+    // Função carregarItemsDoLocalStorage ATUALIZADA para maior robustez
     function carregarItemsDoLocalStorage() {
-        const itemsSalvos = localStorage.getItem('listaDeComprasItemsV3'); // Usa a nova chave
-        let tempItems = [];
+        const itemsSalvos = localStorage.getItem('listaDeComprasItemsV3');
+        let tempItems = []; // Sempre inicializa como array
         if (itemsSalvos) {
             try {
                 const parsedItems = JSON.parse(itemsSalvos);
                 if (Array.isArray(parsedItems)) {
-                    tempItems = parsedItems.map(item => {
-                        // Migração de dados: se statusCompra não existe, tenta derivar de 'marcado'
-                        let statusCompra = 0; // Default
-                        if (item.statusCompra !== undefined) {
-                            statusCompra = item.statusCompra;
-                        } else if (item.marcado === true) { // 'marcado' era para "no carrinho" (verde)
-                            statusCompra = 2;
-                        } // Se 'marcado' era false ou não existia, fica 0 (default)
-                        
-                        return {
-                            ...item,
-                            statusCompra: statusCompra,
-                            marcado: undefined // Remove a propriedade antiga 'marcado'
-                        };
-                    });
+                    // Filtra por itens válidos e mapeia para a estrutura correta
+                    tempItems = parsedItems
+                        .filter(item => item && typeof item.id === 'string' && typeof item.nome === 'string') // Garante que id e nome existam e sejam strings
+                        .map(item => {
+                            let statusCompra = 0; // Default
+                            // Valida e normaliza statusCompra
+                            if (item.statusCompra !== undefined && typeof item.statusCompra === 'number') {
+                                statusCompra = Math.min(Math.max(0, item.statusCompra), 2); // Garante que seja 0, 1 ou 2
+                            } else if (item.marcado === true) { // Migração da propriedade antiga 'marcado'
+                                statusCompra = 2; // 'marcado' true -> no carrinho (verde)
+                            }
+                            
+                            return { // Retorna um objeto com estrutura garantida
+                                id: item.id,
+                                nome: item.nome,
+                                statusCompra: statusCompra
+                                // A propriedade 'marcado' é intencionalmente omitida
+                            };
+                        });
+                } else {
+                     console.warn("Dados do localStorage não eram um array. Lista iniciada vazia.");
                 }
             } catch (e) {
-                console.error("Erro ao carregar itens do localStorage:", e);
-                // tempItems continua como array vazio
+                console.error("Erro ao carregar itens do localStorage (JSON inválido ou outro erro):", e);
+                // tempItems permanece como array vazio em caso de erro
             }
         }
         items = tempItems; // Atribui o array processado (ou vazio) a items
@@ -75,19 +82,20 @@ document.addEventListener('DOMContentLoaded', () => {
         listaDeComprasUl.innerHTML = '';
         let itemsParaRenderizar = [...items]; 
 
-        // Aplica o filtro selecionado
-        if (filtroAtual === 'a-comprar') { // Itens a comprar (vermelho)
+        if (filtroAtual === 'a-comprar') { 
             itemsParaRenderizar = itemsParaRenderizar.filter(item => item.statusCompra === 1);
-        } else if (filtroAtual === 'no-carrinho') { // Itens no carrinho (verde)
+        } else if (filtroAtual === 'no-carrinho') { 
             itemsParaRenderizar = itemsParaRenderizar.filter(item => item.statusCompra === 2);
-        } else if (filtroAtual === 'default') { // Itens default (cinza)
+        } else if (filtroAtual === 'default') { 
             itemsParaRenderizar = itemsParaRenderizar.filter(item => item.statusCompra === 0);
         }
-        // Se filtroAtual === 'todos', itemsParaRenderizar já é a lista completa (copiada).
         
-        itemsParaRenderizar.sort((a, b) => 
-            a.nome.localeCompare(b.nome, undefined, { sensitivity: 'base' })
-        );
+        // Ordenação mais segura
+        itemsParaRenderizar.sort((a, b) => {
+            const nameA = a.nome || ''; // Trata nome indefinido
+            const nameB = b.nome || ''; // Trata nome indefinido
+            return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+        });
 
         if (itemsParaRenderizar.length === 0) {
             const liVazia = document.createElement('li');
@@ -105,21 +113,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.dataset.id = item.id;
             
-            // Limpa classes de status anteriores e adiciona a atual
             li.classList.remove('status-default', 'status-comprar', 'status-no-carrinho');
             let ariaLabelCarrinho = '';
 
             switch (item.statusCompra) {
-                case 1: // Comprar (Vermelho)
+                case 1: 
                     li.classList.add('status-comprar');
                     ariaLabelCarrinho = 'Marcar como "no carrinho" (verde)';
                     break;
-                case 2: // No Carrinho (Verde)
+                case 2: 
                     li.classList.add('status-no-carrinho');
                     ariaLabelCarrinho = 'Resetar item (cinza)';
                     break;
-                case 0: // Default (Cinza)
-                default: // Trata qualquer valor inesperado como default
+                case 0: 
+                default: 
                     li.classList.add('status-default');
                     ariaLabelCarrinho = 'Marcar como "a comprar" (vermelho)';
                     break;
@@ -156,20 +163,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const novoItem = {
             id: Date.now().toString(),
             nome: nomeDoItem,
-            statusCompra: 0 // Novo item começa no estado default (0)
+            statusCompra: 0 
         };
+        // Garante que 'items' seja um array. Embora carregarItemsDoLocalStorage() deva cuidar disso,
+        // esta é uma segurança adicional.
+        if (!Array.isArray(items)) {
+            console.error("items não é um array em adicionarNovoItem. Redefinindo para [].");
+            items = [];
+        }
         items.unshift(novoItem); 
         novoItemInput.value = '';
         salvarItemsNoLocalStorage();
         renderizarLista(); 
     }
 
-    // Nova função para ciclar o status de compra
     function ciclarStatusCompra(idDoItem) {
         const itemIndex = items.findIndex(item => item.id === idDoItem);
         if (itemIndex > -1) {
-            let statusAtual = items[itemIndex].statusCompra || 0; // Garante que é um número, default 0
-            statusAtual = (statusAtual + 1) % 3; // Cicla 0 -> 1 -> 2 -> 0
+            let statusAtual = items[itemIndex].statusCompra || 0; 
+            statusAtual = (statusAtual + 1) % 3; 
             items[itemIndex].statusCompra = statusAtual;
             salvarItemsNoLocalStorage();
             renderizarLista();
@@ -193,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Sua lista está vazia. Não há nada para salvar.");
             return;
         }
-        const dataStr = JSON.stringify(items.map(item => ({id: item.id, nome: item.nome, statusCompra: item.statusCompra || 0})), null, 2); // Garante que statusCompra seja salvo
+        const dataStr = JSON.stringify(items.map(item => ({id: item.id, nome: item.nome, statusCompra: item.statusCompra || 0})), null, 2);
         const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
         const exportFileDefaultName = `lista_compras_backup_${new Date().toISOString().slice(0,10)}.json`;
         const linkElement = document.createElement('a');
@@ -213,15 +225,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 reader.onload = (e) => {
                     try {
                         const itemsImportados = JSON.parse(e.target.result);
-                        if (Array.isArray(itemsImportados) && itemsImportados.every(item => item.id && item.nome !== undefined)) {
+                        // Validação mais robusta dos itens importados
+                        if (Array.isArray(itemsImportados) && 
+                            itemsImportados.every(item => item && typeof item.id === 'string' && typeof item.nome === 'string')) {
                             if (confirm("Isso substituirá sua lista atual. Deseja continuar?")) {
-                                // Mapeia os itens importados para garantir a estrutura correta e migrar 'marcado' se 'statusCompra' não existir
                                 items = itemsImportados.map(importedItem => {
-                                    let statusCompra = 0; // Default
-                                    if (importedItem.statusCompra !== undefined) {
-                                        statusCompra = importedItem.statusCompra;
+                                    let statusCompra = 0; 
+                                    if (importedItem.statusCompra !== undefined && typeof importedItem.statusCompra === 'number') {
+                                        statusCompra = Math.min(Math.max(0, importedItem.statusCompra), 2);
                                     } else if (importedItem.marcado === true) {
-                                        statusCompra = 2; // 'marcado' true -> no carrinho
+                                        statusCompra = 2; 
                                     }
                                     return {
                                         id: importedItem.id,
@@ -234,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 alert("Backup restaurado com sucesso!");
                             }
                         } else {
-                            alert("Arquivo de backup inválido ou formato incorreto.");
+                            alert("Arquivo de backup inválido ou formato incorreto. Verifique se cada item possui 'id' e 'nome'.");
                         }
                     } catch (error) {
                         console.error("Erro ao processar arquivo de backup:", error);
