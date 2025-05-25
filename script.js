@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setViewportHeightProperty();
 
     let items = []; 
-    let filtroAtual = 'todos'; 
+    let filtroAtual = 'todos'; // Valor inicial do filtro
 
     const ICONE_CARRINHO = `
         <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
@@ -39,31 +39,26 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('listaDeComprasItemsV3', JSON.stringify(items));
     }
 
-    // Função carregarItemsDoLocalStorage ATUALIZADA para maior robustez
     function carregarItemsDoLocalStorage() {
         const itemsSalvos = localStorage.getItem('listaDeComprasItemsV3');
-        let tempItems = []; // Sempre inicializa como array
+        let tempItems = []; 
         if (itemsSalvos) {
             try {
                 const parsedItems = JSON.parse(itemsSalvos);
                 if (Array.isArray(parsedItems)) {
-                    // Filtra por itens válidos e mapeia para a estrutura correta
                     tempItems = parsedItems
-                        .filter(item => item && typeof item.id === 'string' && typeof item.nome === 'string') // Garante que id e nome existam e sejam strings
+                        .filter(item => item && typeof item.id === 'string' && typeof item.nome === 'string') 
                         .map(item => {
-                            let statusCompra = 0; // Default
-                            // Valida e normaliza statusCompra
+                            let statusCompra = 0; 
                             if (item.statusCompra !== undefined && typeof item.statusCompra === 'number') {
-                                statusCompra = Math.min(Math.max(0, item.statusCompra), 2); // Garante que seja 0, 1 ou 2
-                            } else if (item.marcado === true) { // Migração da propriedade antiga 'marcado'
-                                statusCompra = 2; // 'marcado' true -> no carrinho (verde)
+                                statusCompra = Math.min(Math.max(0, item.statusCompra), 2); 
+                            } else if (item.marcado === true) { 
+                                statusCompra = 2; 
                             }
-                            
-                            return { // Retorna um objeto com estrutura garantida
+                            return { 
                                 id: item.id,
                                 nome: item.nome,
                                 statusCompra: statusCompra
-                                // A propriedade 'marcado' é intencionalmente omitida
                             };
                         });
                 } else {
@@ -71,10 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (e) {
                 console.error("Erro ao carregar itens do localStorage (JSON inválido ou outro erro):", e);
-                // tempItems permanece como array vazio em caso de erro
             }
         }
-        items = tempItems; // Atribui o array processado (ou vazio) a items
+        items = tempItems; 
     }
 
 
@@ -82,18 +76,17 @@ document.addEventListener('DOMContentLoaded', () => {
         listaDeComprasUl.innerHTML = '';
         let itemsParaRenderizar = [...items]; 
 
-        if (filtroAtual === 'a-comprar') { 
-            itemsParaRenderizar = itemsParaRenderizar.filter(item => item.statusCompra === 1);
-        } else if (filtroAtual === 'no-carrinho') { 
-            itemsParaRenderizar = itemsParaRenderizar.filter(item => item.statusCompra === 2);
-        } else if (filtroAtual === 'default') { 
+        // Lógica de filtro atualizada
+        if (filtroAtual === 'a-comprar-ou-no-carrinho') { 
+            itemsParaRenderizar = itemsParaRenderizar.filter(item => item.statusCompra === 1 || item.statusCompra === 2);
+        } else if (filtroAtual === 'nao-selecionados') { 
             itemsParaRenderizar = itemsParaRenderizar.filter(item => item.statusCompra === 0);
         }
+        // Se filtroAtual === 'todos', itemsParaRenderizar já é a lista completa.
         
-        // Ordenação mais segura
         itemsParaRenderizar.sort((a, b) => {
-            const nameA = a.nome || ''; // Trata nome indefinido
-            const nameB = b.nome || ''; // Trata nome indefinido
+            const nameA = a.nome || ''; 
+            const nameB = b.nome || ''; 
             return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
         });
 
@@ -156,8 +149,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function adicionarNovoItem() {
+        console.log("adicionarNovoItem chamada"); // Log para depuração
         const nomeDoItem = novoItemInput.value.trim();
         if (nomeDoItem === '') {
+            console.log("Nome do item vazio, retornando."); // Log para depuração
             return;
         }
         const novoItem = {
@@ -165,15 +160,15 @@ document.addEventListener('DOMContentLoaded', () => {
             nome: nomeDoItem,
             statusCompra: 0 
         };
-        // Garante que 'items' seja um array. Embora carregarItemsDoLocalStorage() deva cuidar disso,
-        // esta é uma segurança adicional.
+        
         if (!Array.isArray(items)) {
-            console.error("items não é um array em adicionarNovoItem. Redefinindo para [].");
+            console.error("ERRO CRÍTICO: items não é um array em adicionarNovoItem. Redefinindo para []. Isso não deveria acontecer.");
             items = [];
         }
         items.unshift(novoItem); 
         novoItemInput.value = '';
         salvarItemsNoLocalStorage();
+        console.log("Item adicionado, chamando renderizarLista:", items); // Log para depuração
         renderizarLista(); 
     }
 
@@ -225,7 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 reader.onload = (e) => {
                     try {
                         const itemsImportados = JSON.parse(e.target.result);
-                        // Validação mais robusta dos itens importados
                         if (Array.isArray(itemsImportados) && 
                             itemsImportados.every(item => item && typeof item.id === 'string' && typeof item.nome === 'string')) {
                             if (confirm("Isso substituirá sua lista atual. Deseja continuar?")) {
@@ -278,7 +272,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function inicializarApp() {
         carregarItemsDoLocalStorage();
         renderizarLista(); 
-        filtroSelect.value = filtroAtual;
+        // Garante que o select reflita o filtroAtual (que pode ser 'todos' por padrão)
+        if (filtroSelect.querySelector(`option[value="${filtroAtual}"]`)) {
+            filtroSelect.value = filtroAtual;
+        } else {
+            // Se o filtroAtual não for uma opção válida (raro), define para 'todos'
+            filtroAtual = 'todos';
+            filtroSelect.value = 'todos';
+        }
     }
 
     inicializarApp();

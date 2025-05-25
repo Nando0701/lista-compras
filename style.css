@@ -1,3 +1,4 @@
+```css
 /* Estilos Globais e Reset */
 :root {
     --cor-primaria: #007AFF; /* Azul iOS */
@@ -55,7 +56,7 @@ body {
     border: 1px solid #c8c7cc;
     border-radius: 8px;
     background-color: var(--cor-fundo-elementos);
-    font-size: 0.9rem; /* Reduzido para caber mais texto nas opções */
+    font-size: 0.9rem; 
     color: var(--cor-texto-principal);
     appearance: none;
     -webkit-appearance: none;
@@ -104,19 +105,14 @@ body {
 }
 
 /* Estilos baseados no statusCompra */
-/* Default (Cinza) - Ícone do carrinho já é cinza por padrão */
-/* #lista-de-compras li.status-default .btn-carrinho svg { fill: var(--cor-texto-secundario); } */
-
-/* Comprar (Vermelho) */
 #lista-de-compras li.status-comprar .btn-carrinho svg {
     fill: var(--cor-destaque);
 }
 #lista-de-compras li.status-comprar .nome-item {
-    color: var(--cor-destaque); /* Opcional: Destaca o nome do item também */
-    font-weight: 600; /* Opcional: Deixa em negrito */
+    color: var(--cor-destaque); 
+    font-weight: 600; 
 }
 
-/* No Carrinho (Verde) */
 #lista-de-compras li.status-no-carrinho .btn-carrinho svg {
     fill: var(--cor-secundaria);
 }
@@ -139,12 +135,9 @@ body {
 .btn-carrinho svg, .btn-lixeira svg {
     width: 24px;
     height: 24px;
-    fill: var(--cor-texto-secundario); /* Cor default do ícone (cinza) */
+    fill: var(--cor-texto-secundario); 
     transition: fill 0.2s ease;
 }
-
-/* Remove o :hover do carrinho, pois o estado é controlado pelo JS e classes */
-/* .btn-carrinho:hover svg { fill: var(--cor-secundaria); } */
 
 .btn-lixeira:hover svg {
     fill: var(--cor-destaque);
