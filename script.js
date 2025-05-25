@@ -1,3 +1,4 @@
+```javascript
 document.addEventListener('DOMContentLoaded', () => {
     const filtroSelect = document.getElementById('filtro-itens');
     const listaDeComprasUl = document.getElementById('lista-de-compras');
@@ -98,7 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
             btnLixeira.classList.add('btn-lixeira');
             btnLixeira.innerHTML = ICONE_LIXEIRA;
             btnLixeira.setAttribute('aria-label', 'Remover item');
-            btnLixeira.addEventListener('click', () => removerItemDaLista(item.id));
+            // Modificação aqui: passar o evento para removerItemDaLista
+            btnLixeira.addEventListener('click', (event) => removerItemDaLista(event, item.id));
 
             li.appendChild(btnCarrinho);
             li.appendChild(nomeSpan);
@@ -132,9 +134,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function removerItemDaLista(idDoItem) {
+    // Modificação aqui: a função agora aceita 'event' como primeiro parâmetro
+    function removerItemDaLista(event, idDoItem) {
         const itemParaRemover = items.find(item => item.id === idDoItem);
         if (itemParaRemover && confirm(`Tem certeza que deseja remover "${itemParaRemover.nome}" da lista?`)) {
+            
+            // Tenta remover o foco do botão que foi clicado
+            if (event && event.currentTarget && typeof event.currentTarget.blur === 'function') {
+                event.currentTarget.blur();
+            }
+
             items = items.filter(item => item.id !== idDoItem);
             salvarItemsNoLocalStorage();
             renderizarLista();
@@ -189,10 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- EVENT LISTENERS ---
-    // Alterado de 'keypress' para 'keydown' para melhor compatibilidade com a tecla Enter
     novoItemInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
-            event.preventDefault(); // Previne o comportamento padrão do Enter (ex: submeter formulário)
+            event.preventDefault(); 
             adicionarNovoItem();
         }
     });
