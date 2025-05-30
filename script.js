@@ -16,14 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('load', setViewportHeightProperty);
     window.addEventListener('resize', setViewportHeightProperty);
     
-    setViewportHeightProperty(); // Chamada inicial
+    setViewportHeightProperty();
 
-    // Adiciona listeners para o input DEPOIS de verificar se ele existe
     if (novoItemInput) {
         novoItemInput.addEventListener('focus', setViewportHeightProperty);
         novoItemInput.addEventListener('blur', setViewportHeightProperty);
         
-        // Listener para adicionar item com "Enter" - AGORA DENTRO DO IF
         novoItemInput.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
                 event.preventDefault(); 
@@ -31,11 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     } else {
-        console.error("ERRO: Elemento 'novo-item-input' não foi encontrado no DOM. A funcionalidade de adicionar itens não funcionará.");
+        console.error("ERRO: Elemento 'novo-item-input' não foi encontrado no DOM.");
     }
 
     let items = []; 
-    let filtroAtual = 'todos'; 
+    let filtroAtual = 'todos'; // Opções: 'todos', 'pendentes', 'comprados'
 
     const ICONE_CARRINHO = `
         <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
@@ -47,11 +45,13 @@ document.addEventListener('DOMContentLoaded', () => {
         </svg>`;
 
     function salvarItemsNoLocalStorage() {
-        localStorage.setItem('listaDeComprasItemsV3', JSON.stringify(items));
+        // Usando a chave 'listaDeComprasItemsV2' como na versão estável anterior
+        localStorage.setItem('listaDeComprasItemsV2', JSON.stringify(items));
     }
 
     function carregarItemsDoLocalStorage() {
-        const itemsSalvos = localStorage.getItem('listaDeComprasItemsV3');
+        // Usando a chave 'listaDeComprasItemsV2'
+        const itemsSalvos = localStorage.getItem('listaDeComprasItemsV2');
         let tempItems = []; 
         if (itemsSalvos) {
             try {
@@ -59,24 +59,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (Array.isArray(parsedItems)) {
                     tempItems = parsedItems
                         .filter(item => item && typeof item.id === 'string' && typeof item.nome === 'string') 
-                        .map(item => {
-                            let statusCompra = 0; 
-                            if (item.statusCompra !== undefined && typeof item.statusCompra === 'number') {
-                                statusCompra = Math.min(Math.max(0, item.statusCompra), 2); 
-                            } else if (item.marcado === true) { 
-                                statusCompra = 2; 
-                            }
-                            return { 
-                                id: item.id,
-                                nome: item.nome,
-                                statusCompra: statusCompra
-                            };
-                        });
+                        .map(item => ({ 
+                            id: item.id,
+                            nome: item.nome,
+                            // Garante que 'marcado' seja booleano, default false
+                            marcado: typeof item.marcado === 'boolean' ? item.marcado : false 
+                        }));
                 } else {
-                     console.warn("Dados do localStorage não eram um array. Lista iniciada vazia.");
+                     console.warn("Dados do localStorage (V2) não eram um array. Lista iniciada vazia.");
                 }
             } catch (e) {
-                console.error("Erro ao carregar itens do localStorage (JSON inválido ou outro erro):", e);
+                console.error("Erro ao carregar itens do localStorage (V2):", e);
             }
         }
         items = tempItems; 
@@ -87,10 +80,11 @@ document.addEventListener('DOMContentLoaded', () => {
         listaDeComprasUl.innerHTML = '';
         let itemsParaRenderizar = [...items]; 
 
-        if (filtroAtual === 'a-comprar-ou-no-carrinho') { 
-            itemsParaRenderizar = itemsParaRenderizar.filter(item => item.statusCompra === 1 || item.statusCompra === 2);
-        } else if (filtroAtual === 'nao-selecionados') { 
-            itemsParaRenderizar = itemsParaRenderizar.filter(item => item.statusCompra === 0);
+        // Lógica de filtro para 'pendentes' e 'comprados' baseada em item.marcado
+        if (filtroAtual === 'pendentes') { 
+            itemsParaRenderizar = itemsParaRenderizar.filter(item => !item.marcado);
+        } else if (filtroAtual === 'comprados') { 
+            itemsParaRenderizar = itemsParaRenderizar.filter(item => item.marcado);
         }
         
         itemsParaRenderizar.sort((a, b) => {
@@ -115,30 +109,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.dataset.id = item.id;
             
-            li.classList.remove('status-default', 'status-comprar', 'status-no-carrinho');
-            let ariaLabelCarrinho = '';
-
-            switch (item.statusCompra) {
-                case 1: 
-                    li.classList.add('status-comprar');
-                    ariaLabelCarrinho = 'Marcar como "no carrinho" (verde)';
-                    break;
-                case 2: 
-                    li.classList.add('status-no-carrinho');
-                    ariaLabelCarrinho = 'Resetar item (cinza)';
-                    break;
-                case 0: 
-                default: 
-                    li.classList.add('status-default');
-                    ariaLabelCarrinho = 'Marcar como "a comprar" (vermelho)';
-                    break;
+            // Aplica a classe '.marcado' se o item estiver marcado
+            if (item.marcado) {
+                li.classList.add('marcado');
             }
 
             const btnCarrinho = document.createElement('button');
             btnCarrinho.classList.add('btn-carrinho');
             btnCarrinho.innerHTML = ICONE_CARRINHO;
-            btnCarrinho.setAttribute('aria-label', ariaLabelCarrinho);
-            btnCarrinho.addEventListener('click', () => ciclarStatusCompra(item.id));
+            // Aria-label simples para marcar/desmarcar
+            btnCarrinho.setAttribute('aria-label', item.marcado ? 'Desmarcar item' : 'Marcar item');
+            // Chama toggleMarcarItem (lógica antiga de 2 estados)
+            btnCarrinho.addEventListener('click', () => toggleMarcarItem(item.id));
 
             const nomeSpan = document.createElement('span');
             nomeSpan.classList.add('nome-item');
@@ -158,35 +140,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function adicionarNovoItem() {
-        // console.log("adicionarNovoItem chamada"); // Removido para produção, mas útil para debug
         const nomeDoItem = novoItemInput.value.trim();
         if (nomeDoItem === '') {
-            // console.log("Nome do item vazio, retornando."); // Removido para produção
             return;
         }
         const novoItem = {
             id: Date.now().toString(),
             nome: nomeDoItem,
-            statusCompra: 0 
+            marcado: false // Itens são adicionados como não marcados
         };
         
         if (!Array.isArray(items)) {
-            console.error("ERRO CRÍTICO: items não é um array em adicionarNovoItem. Redefinindo para [].");
             items = [];
         }
         items.unshift(novoItem); 
         novoItemInput.value = '';
         salvarItemsNoLocalStorage();
-        // console.log("Item adicionado, chamando renderizarLista:", items); // Removido para produção
         renderizarLista(); 
     }
 
-    function ciclarStatusCompra(idDoItem) {
+    // Função para alternar o estado 'marcado' (2 estados: marcado/não marcado)
+    function toggleMarcarItem(idDoItem) {
         const itemIndex = items.findIndex(item => item.id === idDoItem);
         if (itemIndex > -1) {
-            let statusAtual = items[itemIndex].statusCompra || 0; 
-            statusAtual = (statusAtual + 1) % 3; 
-            items[itemIndex].statusCompra = statusAtual;
+            items[itemIndex].marcado = !items[itemIndex].marcado;
             salvarItemsNoLocalStorage();
             renderizarLista();
         }
@@ -209,7 +186,8 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Sua lista está vazia. Não há nada para salvar.");
             return;
         }
-        const dataStr = JSON.stringify(items.map(item => ({id: item.id, nome: item.nome, statusCompra: item.statusCompra || 0})), null, 2);
+        // Salva itens com a propriedade 'marcado'
+        const dataStr = JSON.stringify(items.map(item => ({id: item.id, nome: item.nome, marcado: item.marcado || false})), null, 2);
         const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
         const exportFileDefaultName = `lista_compras_backup_${new Date().toISOString().slice(0,10)}.json`;
         const linkElement = document.createElement('a');
@@ -232,19 +210,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (Array.isArray(itemsImportados) && 
                             itemsImportados.every(item => item && typeof item.id === 'string' && typeof item.nome === 'string')) {
                             if (confirm("Isso substituirá sua lista atual. Deseja continuar?")) {
-                                items = itemsImportados.map(importedItem => {
-                                    let statusCompra = 0; 
-                                    if (importedItem.statusCompra !== undefined && typeof importedItem.statusCompra === 'number') {
-                                        statusCompra = Math.min(Math.max(0, importedItem.statusCompra), 2);
-                                    } else if (importedItem.marcado === true) {
-                                        statusCompra = 2; 
-                                    }
-                                    return {
-                                        id: importedItem.id,
-                                        nome: importedItem.nome,
-                                        statusCompra: statusCompra
-                                    };
-                                });
+                                items = itemsImportados.map(importedItem => ({
+                                    id: importedItem.id,
+                                    nome: importedItem.nome,
+                                    // Garante que 'marcado' seja booleano ao importar
+                                    marcado: typeof importedItem.marcado === 'boolean' ? importedItem.marcado : false
+                                }));
                                 salvarItemsNoLocalStorage(); 
                                 renderizarLista(); 
                                 alert("Backup restaurado com sucesso!");
@@ -263,8 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
         inputArquivo.click();
     }
 
-    // Event listeners para os botões de filtro, salvar e abrir backup
-    // Estes são adicionados independentemente da existência do novoItemInput
     filtroSelect.addEventListener('change', (event) => {
         filtroAtual = event.target.value;
         renderizarLista();

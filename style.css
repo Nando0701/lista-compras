@@ -1,13 +1,12 @@
-```css
 /* Estilos Globais e Reset */
 :root {
     --cor-primaria: #007AFF; /* Azul iOS */
-    --cor-secundaria: #34C759; /* Verde iOS (para "No Carrinho") */
-    --cor-destaque: #FF3B30; /* Vermelho iOS (para "Comprar") */
+    --cor-secundaria: #34C759; /* Verde iOS (para item "marcado") */
+    --cor-destaque: #FF3B30; /* Vermelho iOS (para hover da lixeira) */
     --cor-fundo: #f0f0f7;
     --cor-fundo-elementos: #ffffff;
     --cor-texto-principal: #000000;
-    --cor-texto-secundario: #8A8A8E; /* Cinza (para Default e texto de item comprado) */
+    --cor-texto-secundario: #8A8A8E; /* Cinza (para ícone default e texto de item comprado) */
     --altura-header: 60px;
     --altura-footer: 120px;
     --espacamento-padrao: 15px;
@@ -56,7 +55,7 @@ body {
     border: 1px solid #c8c7cc;
     border-radius: 8px;
     background-color: var(--cor-fundo-elementos);
-    font-size: 0.9rem; 
+    font-size: 1rem; 
     color: var(--cor-texto-principal);
     appearance: none;
     -webkit-appearance: none;
@@ -104,19 +103,11 @@ body {
     transition: color 0.2s ease, text-decoration 0.2s ease;
 }
 
-/* Estilos baseados no statusCompra */
-#lista-de-compras li.status-comprar .btn-carrinho svg {
-    fill: var(--cor-destaque);
+/* Estilo para item marcado com 'marcado: true' */
+#lista-de-compras li.marcado .btn-carrinho svg {
+    fill: var(--cor-secundaria); /* Verde */
 }
-#lista-de-compras li.status-comprar .nome-item {
-    color: var(--cor-destaque); 
-    font-weight: 600; 
-}
-
-#lista-de-compras li.status-no-carrinho .btn-carrinho svg {
-    fill: var(--cor-secundaria);
-}
-#lista-de-compras li.status-no-carrinho .nome-item {
+#lista-de-compras li.marcado .nome-item {
     text-decoration: line-through;
     color: var(--cor-texto-secundario);
 }
@@ -135,9 +126,16 @@ body {
 .btn-carrinho svg, .btn-lixeira svg {
     width: 24px;
     height: 24px;
-    fill: var(--cor-texto-secundario); 
+    fill: var(--cor-texto-secundario); /* Cor default do ícone (cinza) */
     transition: fill 0.2s ease;
 }
+
+/* Efeito hover para o carrinho (default cinza -> hover verde) */
+/* Este hover pode ser removido se preferir que só mude ao clicar */
+.btn-carrinho:hover svg {
+    fill: var(--cor-secundaria); 
+}
+
 
 .btn-lixeira:hover svg {
     fill: var(--cor-destaque);
@@ -181,7 +179,7 @@ body {
 }
 
 .backup-container button {
-    flex: 1; 
+    flex: 1; /* Garante que os botões dividam o espaço */
     padding: 10px;
     font-size: 0.95rem;
     font-weight: 500;
