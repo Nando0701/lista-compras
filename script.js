@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const salvarBackupBtn = document.getElementById('salvar-backup-btn');
     const abrirBackupBtn = document.getElementById('abrir-backup-btn');
 
+    // --- FUNÇÃO PARA AJUSTAR ALTURA DA VIEWPORT DINAMICAMENTE ---
     function setViewportHeightProperty() {
         setTimeout(() => {
             const vh = window.innerHeight * 0.01;
@@ -15,27 +16,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('load', setViewportHeightProperty);
     window.addEventListener('resize', setViewportHeightProperty);
-    
-    setViewportHeightProperty(); // Chamada inicial
 
-    // Adiciona listeners para o input DEPOIS de verificar se ele existe
     if (novoItemInput) {
         novoItemInput.addEventListener('focus', setViewportHeightProperty);
         novoItemInput.addEventListener('blur', setViewportHeightProperty);
-        
-        novoItemInput.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault(); 
-                adicionarNovoItem();
-            }
-        });
-    } else {
-        console.error("ERRO: Elemento 'novo-item-input' não foi encontrado no DOM.");
     }
+    
+    setViewportHeightProperty(); // Chamada inicial
 
-    let items = []; 
-    let filtroAtual = 'todos'; // Opções: 'todos', 'pendentes', 'comprados'
+    // Estado da Aplicação
+    let items = [];
+    let filtroAtual = 'todos';
 
+    // --- ÍCONES SVG ---
     const ICONE_CARRINHO = `
         <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
             <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59L3.62 17H19v-2H7l1.1-2h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A.996.996 0 0021.79 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"></path>
@@ -45,50 +38,36 @@ document.addEventListener('DOMContentLoaded', () => {
             <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path>
         </svg>`;
 
+    // --- FUNÇÕES DE PERSISTÊNCIA (Local Storage) ---
     function salvarItemsNoLocalStorage() {
         localStorage.setItem('listaDeComprasItemsV2', JSON.stringify(items));
     }
 
     function carregarItemsDoLocalStorage() {
         const itemsSalvos = localStorage.getItem('listaDeComprasItemsV2');
-        let tempItems = []; 
         if (itemsSalvos) {
-            try {
-                const parsedItems = JSON.parse(itemsSalvos);
-                if (Array.isArray(parsedItems)) {
-                    tempItems = parsedItems
-                        .filter(item => item && typeof item.id === 'string' && typeof item.nome === 'string') 
-                        .map(item => ({ 
-                            id: item.id,
-                            nome: item.nome,
-                            marcado: typeof item.marcado === 'boolean' ? item.marcado : false 
-                        }));
-                } else {
-                     // console.warn("Dados do localStorage (V2) não eram um array. Lista iniciada vazia.");
-                }
-            } catch (e) {
-                // console.error("Erro ao carregar itens do localStorage (V2):", e);
-            }
+            items = JSON.parse(itemsSalvos);
         }
-        items = tempItems; 
     }
 
-
+    // --- FUNÇÕES DE RENDERIZAÇÃO E MANIPULAÇÃO DA LISTA ---
     function renderizarLista() {
         listaDeComprasUl.innerHTML = '';
-        let itemsParaRenderizar = [...items]; 
 
-        if (filtroAtual === 'pendentes') { 
+        let itemsParaRenderizar = [...items]; // Cria uma cópia para não modificar 'items' com o sort
+
+        // Aplica o filtro selecionado
+        if (filtroAtual === 'a-comprar') {
             itemsParaRenderizar = itemsParaRenderizar.filter(item => !item.marcado);
-        } else if (filtroAtual === 'comprados') { 
-            itemsParaRenderizar = itemsParaRenderizar.filter(item => item.marcado);
+        } else if (filtroAtual === 'nao-selecionados') {
+            itemsParaRenderizar = itemsParaRenderizar.filter(item => !item.marcado); 
         }
         
-        itemsParaRenderizar.sort((a, b) => {
-            const nameA = a.nome || ''; 
-            const nameB = b.nome || ''; 
-            return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
-        });
+        // Ordena os itens alfabeticamente pelo nome (case-insensitive)
+        // Esta é a alteração principal para ordenação
+        itemsParaRenderizar.sort((a, b) => 
+            a.nome.localeCompare(b.nome, undefined, { sensitivity: 'base' })
+        );
 
         if (itemsParaRenderizar.length === 0) {
             const liVazia = document.createElement('li');
@@ -105,7 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
         itemsParaRenderizar.forEach(item => {
             const li = document.createElement('li');
             li.dataset.id = item.id;
-            
             if (item.marcado) {
                 li.classList.add('marcado');
             }
@@ -124,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnLixeira.classList.add('btn-lixeira');
             btnLixeira.innerHTML = ICONE_LIXEIRA;
             btnLixeira.setAttribute('aria-label', 'Remover item');
-            btnLixeira.addEventListener('click', (event) => removerItemDaLista(event, item.id));
+            btnLixeira.addEventListener('click', () => removerItemDaLista(item.id));
 
             li.appendChild(btnCarrinho);
             li.appendChild(nomeSpan);
@@ -141,14 +119,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const novoItem = {
             id: Date.now().toString(),
             nome: nomeDoItem,
-            marcado: false 
+            marcado: false
         };
-        
-        if (!Array.isArray(items)) {
-            // Esta situação não deveria ocorrer se carregarItemsDoLocalStorage funcionar corretamente.
-            // console.error("ERRO CRÍTICO: 'items' não é um array em adicionarNovoItem. Redefinindo para [].");
-            items = [];
-        }
+        // Mantém a adição no início do array 'items' para consistência,
+        // a ordenação em renderizarLista() cuidará da exibição correta.
         items.unshift(novoItem); 
         novoItemInput.value = '';
         salvarItemsNoLocalStorage();
@@ -164,24 +138,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function removerItemDaLista(event, idDoItem) {
+    function removerItemDaLista(idDoItem) {
         const itemParaRemover = items.find(item => item.id === idDoItem);
         if (itemParaRemover && confirm(`Tem certeza que deseja remover "${itemParaRemover.nome}" da lista?`)) {
-            if (event && event.currentTarget && typeof event.currentTarget.blur === 'function') {
-                event.currentTarget.blur();
-            }
             items = items.filter(item => item.id !== idDoItem);
             salvarItemsNoLocalStorage();
             renderizarLista();
         }
     }
 
+    // --- FUNÇÕES DE BACKUP ---
     function salvarBackup() {
         if (items.length === 0) {
             alert("Sua lista está vazia. Não há nada para salvar.");
             return;
         }
-        const dataStr = JSON.stringify(items.map(item => ({id: item.id, nome: item.nome, marcado: item.marcado || false})), null, 2);
+        const dataStr = JSON.stringify(items, null, 2);
         const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
         const exportFileDefaultName = `lista_compras_backup_${new Date().toISOString().slice(0,10)}.json`;
         const linkElement = document.createElement('a');
@@ -201,23 +173,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 reader.onload = (e) => {
                     try {
                         const itemsImportados = JSON.parse(e.target.result);
-                        if (Array.isArray(itemsImportados) && 
-                            itemsImportados.every(item => item && typeof item.id === 'string' && typeof item.nome === 'string')) {
+                        if (Array.isArray(itemsImportados) && itemsImportados.every(item => item.id && item.nome !== undefined && typeof item.marcado === 'boolean')) {
                             if (confirm("Isso substituirá sua lista atual. Deseja continuar?")) {
-                                items = itemsImportados.map(importedItem => ({
-                                    id: importedItem.id,
-                                    nome: importedItem.nome,
-                                    marcado: typeof importedItem.marcado === 'boolean' ? importedItem.marcado : false
-                                }));
+                                items = itemsImportados;
                                 salvarItemsNoLocalStorage(); 
-                                renderizarLista(); 
+                                renderizarLista(); // Garante que a lista importada também seja ordenada
                                 alert("Backup restaurado com sucesso!");
                             }
                         } else {
-                            alert("Arquivo de backup inválido ou formato incorreto. Verifique se cada item possui 'id' e 'nome'.");
+                            alert("Arquivo de backup inválido ou formato incorreto.");
                         }
                     } catch (error) {
-                        // console.error("Erro ao processar arquivo de backup:", error);
+                        console.error("Erro ao processar arquivo de backup:", error);
                         alert("Erro ao ler o arquivo de backup. Verifique se é um JSON válido.");
                     }
                 };
@@ -227,38 +194,27 @@ document.addEventListener('DOMContentLoaded', () => {
         inputArquivo.click();
     }
 
-    // Adiciona listeners para os botões de filtro, salvar e abrir backup
-    if (filtroSelect) {
-        filtroSelect.addEventListener('change', (event) => {
-            filtroAtual = event.target.value;
-            renderizarLista();
-        });
-    } else {
-        console.error("ERRO: Elemento 'filtro-itens' não encontrado.");
-    }
+    // --- EVENT LISTENERS ---
+    novoItemInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            adicionarNovoItem();
+        }
+    });
 
-    if (salvarBackupBtn) {
-        salvarBackupBtn.addEventListener('click', salvarBackup);
-    } else {
-        console.error("ERRO: Elemento 'salvar-backup-btn' não encontrado.");
-    }
+    filtroSelect.addEventListener('change', (event) => {
+        filtroAtual = event.target.value;
+        renderizarLista();
+    });
 
-    if (abrirBackupBtn) {
-        abrirBackupBtn.addEventListener('click', abrirBackup);
-    } else {
-        console.error("ERRO: Elemento 'abrir-backup-btn' não encontrado.");
-    }
+    salvarBackupBtn.addEventListener('click', salvarBackup);
+    abrirBackupBtn.addEventListener('click', abrirBackup);
 
-
+    // --- INICIALIZAÇÃO ---
     function inicializarApp() {
         carregarItemsDoLocalStorage();
         renderizarLista(); 
-        if (filtroSelect && filtroSelect.querySelector(`option[value="${filtroAtual}"]`)) {
-            filtroSelect.value = filtroAtual;
-        } else if (filtroSelect) {
-            filtroAtual = 'todos';
-            filtroSelect.value = 'todos';
-        }
+        filtroSelect.value = filtroAtual;
     }
 
     inicializarApp();
