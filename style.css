@@ -1,3 +1,4 @@
+```css
 /* Estilos Globais e Reset */
 :root {
     --cor-primaria: #007AFF; /* Azul iOS */
@@ -131,7 +132,6 @@ body {
 }
 
 /* Efeito hover para o carrinho (default cinza -> hover verde) */
-/* Este hover pode ser removido se preferir que só mude ao clicar */
 .btn-carrinho:hover svg {
     fill: var(--cor-secundaria); 
 }
@@ -179,7 +179,7 @@ body {
 }
 
 .backup-container button {
-    flex: 1; /* Garante que os botões dividam o espaço */
+    flex: 1; 
     padding: 10px;
     font-size: 0.95rem;
     font-weight: 500;
